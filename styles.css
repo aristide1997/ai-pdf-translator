@@ -12,7 +12,7 @@ body {
 }
 
 .container {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
 }
@@ -139,23 +139,58 @@ button:disabled {
 }
 
 .result-page {
-    margin-bottom: 30px;
-    padding: 20px;
+    margin-bottom: 40px;
+    padding: 24px;
+    background-color: #fff;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.result-page h3 {
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-size: 1.3rem;
+    font-weight: 600;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #3498db;
+}
+
+.comparison-container {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.original-page {
+    flex: 0 0 45%;
+    background-color: #f8f9fa;
+    padding: 16px;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.original-page img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.translated-page {
+    flex: 1;
+    padding: 16px;
     background-color: #f8f9fa;
     border-radius: 6px;
     border-left: 4px solid #3498db;
 }
 
-.result-page h3 {
-    margin-bottom: 12px;
-    color: #2c3e50;
-    font-size: 1.2rem;
-}
-
-.result-page p {
+.translated-page p {
     white-space: pre-wrap;
     line-height: 1.8;
     color: #333;
+    font-size: 1rem;
 }
 
 #download-btn {
@@ -210,5 +245,13 @@ footer {
 
     main {
         padding: 20px;
+    }
+
+    .comparison-container {
+        flex-direction: column;
+    }
+
+    .original-page {
+        flex: 1 1 100%;
     }
 }

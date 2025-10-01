@@ -255,12 +255,27 @@ function displayResult(pageNumber, text) {
     
     const heading = document.createElement('h3');
     heading.textContent = `Page ${pageNumber}`;
+    resultDiv.appendChild(heading);
     
+    const comparisonContainer = document.createElement('div');
+    comparisonContainer.className = 'comparison-container';
+    
+    const originalPage = document.createElement('div');
+    originalPage.className = 'original-page';
+    const img = document.createElement('img');
+    img.src = `data:image/png;base64,${pageImages[pageNumber - 1]}`;
+    img.alt = `Page ${pageNumber}`;
+    originalPage.appendChild(img);
+    
+    const translatedPage = document.createElement('div');
+    translatedPage.className = 'translated-page';
     const paragraph = document.createElement('p');
     paragraph.textContent = text;
+    translatedPage.appendChild(paragraph);
     
-    resultDiv.appendChild(heading);
-    resultDiv.appendChild(paragraph);
+    comparisonContainer.appendChild(originalPage);
+    comparisonContainer.appendChild(translatedPage);
+    resultDiv.appendChild(comparisonContainer);
     resultsContainer.appendChild(resultDiv);
 }
 
