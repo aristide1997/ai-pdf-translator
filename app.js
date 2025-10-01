@@ -157,7 +157,7 @@ function buildContentsForPage(pageIndex, language) {
     const hasPrevious = pageIndex > 0;
     const hasNext = pageIndex < pageImages.length - 1;
 
-    let promptText = `Translate the content of the middle page to ${language}.`;
+    let promptText = `Translate the content of the middle page to ${language}. Format your response as markdown to preserve the document structure (headings, paragraphs, lists, emphasis, etc.). Use proper markdown syntax for formatting.`;
     
     if (hasPrevious && hasNext) {
         promptText += ' The previous and next pages are provided as context to ensure translation continuity.';
@@ -269,9 +269,10 @@ function displayResult(pageNumber, text) {
     
     const translatedPage = document.createElement('div');
     translatedPage.className = 'translated-page';
-    const paragraph = document.createElement('p');
-    paragraph.textContent = text;
-    translatedPage.appendChild(paragraph);
+    const markdownContent = document.createElement('div');
+    markdownContent.className = 'markdown-content';
+    markdownContent.innerHTML = marked.parse(text);
+    translatedPage.appendChild(markdownContent);
     
     comparisonContainer.appendChild(originalPage);
     comparisonContainer.appendChild(translatedPage);
@@ -283,14 +284,14 @@ function downloadResults() {
     console.log('Downloading translation results');
     let content = '';
     translations.forEach(({ pageNumber, text }) => {
-        content += `=== Page ${pageNumber} ===\n\n${text}\n\n`;
+        content += `# Page ${pageNumber}\n\n${text}\n\n---\n\n`;
     });
 
-    const blob = new Blob([content], { type: 'text/plain' });
+    const blob = new Blob([content], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'translation.txt';
+    a.download = 'translation.md';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
