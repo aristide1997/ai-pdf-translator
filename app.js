@@ -108,7 +108,7 @@ async function startTranslation() {
         for (let i = 0; i < pageImages.length; i++) {
             updateProgress(i + 1, pageImages.length);
             
-            const translation = await translatePage(i, language, apiKey);
+            const translation = await translatePage(i, language, apiKey, translations);
             translations.push({
                 pageNumber: i + 1,
                 text: translation
@@ -128,121 +128,113 @@ async function startTranslation() {
     }
 }
 
-async function translatePage(pageIndex, language, apiKey) {
-    const contents = buildContentsForPage(pageIndex, language);
-
+async function translatePage(pageIndex, language, apiKey, previousTranslations) {
+    const contents = buildContentsForPage(pageIndex, language, previousTranslations);
+    const maxRetries = 10;
+    const retryDelays = [1000, 5000, 10000, 20000, 30000, 40000, 50000, 60000, 60000, 60000];
+    
     console.log('Translating page', pageIndex + 1);
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            contents: contents
-        })
-    });
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            // Initialize the SDK client
+            const ai = new window.GoogleGenAI({ apiKey });
+            
+            // Use the SDK's generateContent method
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: contents,
+                config: {
+                    thinkingConfig: {
+                        thinkingBudget: 0
+                    }
+                }
+            });
 
-    if (!response.ok) {
-        const error = await response.json();
-        console.error('API error for page', pageIndex + 1, ':', error);
-        throw new Error(error.error?.message || 'API request failed');
+            // Try to get text from response
+            let text = response.text;
+            
+            // If text is undefined, try to access via candidates as fallback
+            if (!text) {
+                console.warn(`Page ${pageIndex + 1}: response.text is undefined, trying fallback`);
+                if (response.candidates && response.candidates[0]?.content?.parts?.[0]?.text) {
+                    text = response.candidates[0].content.parts[0].text;
+                }
+            }
+            
+            // If still no text, treat as empty response
+            if (!text) {
+                const errorMsg = `Empty response from API for page ${pageIndex + 1}`;
+                console.warn(errorMsg, 'Response:', response);
+                
+                // Retry on empty response
+                if (attempt < maxRetries) {
+                    const delayMs = retryDelays[attempt];
+                    console.log(`Retrying in ${delayMs}ms (attempt ${attempt + 1}/${maxRetries})...`);
+                    await sleep(delayMs);
+                    continue;
+                }
+                throw new Error(errorMsg);
+            }
+
+            console.log(`Page ${pageIndex + 1} translated successfully`);
+            return text;
+            
+        } catch (error) {
+            const isRateLimitError = error.status === 429 || error.message?.includes('429') || error.message?.includes('rate limit');
+            const isRetryableError = error.status >= 500 || isRateLimitError;
+            
+            console.error(`API error for page ${pageIndex + 1} (attempt ${attempt + 1}/${maxRetries + 1}):`, error);
+            
+            // Retry on rate limiting or server errors
+            if (isRetryableError && attempt < maxRetries) {
+                const delayMs = retryDelays[attempt];
+                console.log(`${isRateLimitError ? 'Rate limited' : 'Server error'}, retrying in ${delayMs}ms...`);
+                await sleep(delayMs);
+                continue;
+            }
+            
+            // Final attempt failed or non-retryable error
+            throw new Error(error.message || 'API request failed');
+        }
     }
-
-    const data = await response.json();
-    return data.candidates[0].content.parts[0].text;
 }
 
-function buildContentsForPage(pageIndex, language) {
-    const parts = [];
-    const hasPrevious = pageIndex > 0;
-    const hasNext = pageIndex < pageImages.length - 1;
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-    let promptText = `Translate the content of the middle page to ${language}. Format your response as markdown to preserve the document structure (headings, paragraphs, lists, emphasis, etc.). Use proper markdown syntax for formatting.`;
+function buildContentsForPage(pageIndex, language, previousTranslations) {
+    const contextWindow = 2;
+    const contextStart = Math.max(0, pageIndex - contextWindow);
+    const recentTranslations = previousTranslations.slice(contextStart, pageIndex);
     
-    if (hasPrevious && hasNext) {
-        promptText += ' The previous and next pages are provided as context to ensure translation continuity.';
-        parts.push({
-            text: 'Previous page (for context):'
+    let promptText = `Translate this page to ${language}. Format your response as markdown to preserve the document structure (headings, paragraphs, lists, emphasis, etc.). Use proper markdown syntax for formatting. If the page has no content or is blank, respond with exactly "## Empty page".`;
+    
+    if (recentTranslations.length > 0) {
+        promptText += '\n\nPrevious pages for context (maintain terminology consistency):\n';
+        recentTranslations.forEach(t => {
+            promptText += `\n--- Page ${t.pageNumber} ---\n${t.text}\n`;
         });
-        parts.push({
-            inline_data: {
-                mime_type: 'image/png',
-                data: pageImages[pageIndex - 1]
-            }
-        });
-        parts.push({
-            text: 'TRANSLATE THIS PAGE:'
-        });
-        parts.push({
-            inline_data: {
-                mime_type: 'image/png',
-                data: pageImages[pageIndex]
-            }
-        });
-        parts.push({
-            text: 'Next page (for context):'
-        });
-        parts.push({
-            inline_data: {
-                mime_type: 'image/png',
-                data: pageImages[pageIndex + 1]
-            }
-        });
-    } else if (hasPrevious) {
-        promptText += ' The previous page is provided as context.';
-        parts.push({
-            text: 'Previous page (for context):'
-        });
-        parts.push({
-            inline_data: {
-                mime_type: 'image/png',
-                data: pageImages[pageIndex - 1]
-            }
-        });
-        parts.push({
-            text: 'TRANSLATE THIS PAGE:'
-        });
-        parts.push({
-            inline_data: {
-                mime_type: 'image/png',
-                data: pageImages[pageIndex]
-            }
-        });
-    } else if (hasNext) {
-        promptText += ' The next page is provided as context.';
-        parts.push({
-            text: 'TRANSLATE THIS PAGE:'
-        });
-        parts.push({
-            inline_data: {
-                mime_type: 'image/png',
-                data: pageImages[pageIndex]
-            }
-        });
-        parts.push({
-            text: 'Next page (for context):'
-        });
-        parts.push({
-            inline_data: {
-                mime_type: 'image/png',
-                data: pageImages[pageIndex + 1]
-            }
-        });
-    } else {
-        parts.push({
-            text: 'TRANSLATE THIS PAGE:'
-        });
-        parts.push({
-            inline_data: {
-                mime_type: 'image/png',
-                data: pageImages[pageIndex]
-            }
-        });
+        promptText += '\n';
     }
+    
+    promptText += '\nOnly provide the translated text for the current page, no explanations or metadata.';
 
-    parts.unshift({
-        text: promptText + ' Only provide the translated text, no explanations or metadata.'
-    });
+    const parts = [
+        {
+            text: promptText
+        },
+        {
+            text: '\nTRANSLATE THIS PAGE:'
+        },
+        {
+            inlineData: {
+                mimeType: 'image/png',
+                data: pageImages[pageIndex]
+            }
+        }
+    ];
 
     return [{
         parts: parts
