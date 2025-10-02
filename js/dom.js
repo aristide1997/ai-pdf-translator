@@ -1,4 +1,5 @@
 export const pdfUpload = document.getElementById('pdf-upload');
+export const translationForm = document.getElementById('translation-form');
 export const apiKeyInput = document.getElementById('api-key');
 export const targetLanguage = document.getElementById('target-language');
 export const translateBtn = document.getElementById('translate-btn');

@@ -2,6 +2,7 @@ import { PDF_CONFIG } from './config.js';
 import { getPdfDocument, getPageImages, clearTranslations, addTranslation } from './state.js';
 import { 
     pdfUpload, 
+    translationForm,
     apiKeyInput, 
     targetLanguage, 
     translateBtn, 
@@ -89,6 +90,9 @@ function resetApp() {
 
 pdfUpload.addEventListener('change', onPdfUpload);
 apiKeyInput.addEventListener('input', validateInputs);
-translateBtn.addEventListener('click', startTranslation);
+translationForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    await startTranslation();
+});
 downloadBtn.addEventListener('click', downloadResults);
 retryBtn.addEventListener('click', resetApp);
