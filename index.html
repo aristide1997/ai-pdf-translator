@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Translator</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+    <script type="module">
+        // Import the Google Gen AI SDK from CDN
+        import { GoogleGenAI } from 'https://esm.sh/@google/genai@1.21.0';
+        // Make it available globally for our app.js
+        window.GoogleGenAI = GoogleGenAI;
+    </script>
+    <script type="module" src="js/app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PDF Translator</h1>
+            <p>Translate PDF documents using AI vision models</p>
+        </header>
+
+        <main>
+            <section class="input-section">
+                <div class="input-group">
+                    <label for="pdf-upload">
+                        <strong>Upload PDF</strong>
+                    </label>
+                    <input type="file" id="pdf-upload" accept="application/pdf" />
+                </div>
+
+                <form id="translation-form" autocomplete="on">
+                    <input type="text" name="username" value="gemini-api-key" autocomplete="username" style="display: none;" readonly />
+                    
+                    <div class="input-group">
+                        <label for="api-key">
+                            <strong>Google Gemini API Key</strong>
+                        </label>
+                        <input type="password" id="api-key" name="password" placeholder="Enter your API key..." autocomplete="current-password" />
+                    </div>
+
+                    <div class="input-group">
+                        <label for="target-language">
+                            <strong>Target Language</strong>
+                        </label>
+                        <select id="target-language">
+                            <option value="Spanish">Spanish</option>
+                            <option value="French">French</option>
+                            <option value="German">German</option>
+                            <option value="Italian" selected>Italian</option>
+                            <option value="Portuguese">Portuguese</option>
+                            <option value="Chinese (Simplified)">Chinese (Simplified)</option>
+                            <option value="Chinese (Traditional)">Chinese (Traditional)</option>
+                            <option value="Japanese">Japanese</option>
+                            <option value="Korean">Korean</option>
+                            <option value="Russian">Russian</option>
+                            <option value="Arabic">Arabic</option>
+                            <option value="Hindi">Hindi</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" id="translate-btn" disabled>Translate PDF</button>
+                </form>
+            </section>
+
+            <section class="progress-section" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+                <p class="progress-text">Preparing...</p>
+            </section>
+
+            <section class="results-section" style="display: none;">
+                <h2>Translation Results</h2>
+                <div id="results-container"></div>
+                <button id="download-btn">Download as Markdown</button>
+            </section>
+
+            <section class="error-section" style="display: none;">
+                <div class="error-message"></div>
+                <button id="retry-btn">Try Again</button>
+            </section>
+        </main>
+
+        <footer>
+            <p>Your API key is used only in your browser and never sent to any server except Google.</p>
+        </footer>
+    </div>
+</body>
+</html>

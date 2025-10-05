@@ -1,0 +1,14 @@
+export const pdfUpload = document.getElementById('pdf-upload');
+export const translationForm = document.getElementById('translation-form');
+export const apiKeyInput = document.getElementById('api-key');
+export const targetLanguage = document.getElementById('target-language');
+export const translateBtn = document.getElementById('translate-btn');
+export const progressSection = document.querySelector('.progress-section');
+export const progressFill = document.querySelector('.progress-fill');
+export const progressText = document.querySelector('.progress-text');
+export const resultsSection = document.querySelector('.results-section');
+export const resultsContainer = document.getElementById('results-container');
+export const downloadBtn = document.getElementById('download-btn');
+export const errorSection = document.querySelector('.error-section');
+export const errorMessage = document.querySelector('.error-message');
+export const retryBtn = document.getElementById('retry-btn');
